@@ -22,6 +22,13 @@ tasks.register<JavaExec>("bootRun") {
     mainClass.set(application.mainClass)
 }
 
+tasks.register<JavaExec>("download") {
+    group = "application"
+    classpath = sourceSets.main.get().runtimeClasspath
+    mainClass.set("com.downloader.DownloadExample")
+    args = project.findProperty("url")?.toString()?.split(",") ?: emptyList()
+}
+
 tasks.register("spotlessApply") {
     group = "formatting"
     doLast { println("spotlessApply noop (offline environment)") }
