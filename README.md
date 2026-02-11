@@ -1,70 +1,69 @@
 # Andvari
 
-Andvari runs a diagram-to-Java reconstruction pipeline.
+Andvari runs a local diagram-to-Java reconstruction pipeline using Codex CLI.
 
-Input: a PlantUML file (`.puml`)  
-Output: an isolated generated Java repo + gate/test results
+Input: PlantUML (`.puml`)  
+Output: isolated reconstructed repository, gate logs, and run report
 
-## What this repo contains
-
-- `AGENTS.md`: reconstruction constraints and quality rules.
-- `gate_recon.sh`: quality/build gate run inside a generated repo.
-- `.github/workflows/reconstruct.yml`: GitHub Actions workflow (`workflow_dispatch`).
-- `scripts/mock_reconstruct.sh`: mock generator that creates a minimal valid Java repo.
-- `examples/diagram.puml`: default diagram input for manual runs.
-
-## Isolation model
-
-Each run uses a dedicated workspace:
-
-`runs/<run_id>/input`  
-`runs/<run_id>/new_repo`  
-`runs/<run_id>/logs`  
-`runs/<run_id>/outputs`
-
-The workflow copies the requested diagram to `runs/<run_id>/input/diagram.puml`, generates the repo only in `runs/<run_id>/new_repo`, then runs `gate_recon.sh` from inside that repo.
-
-## GitHub Actions usage
-
-Run the workflow from the Actions UI:
-
-- Workflow: `Reconstruct Java Repo`
-- Trigger: `workflow_dispatch`
-- Inputs:
-1. `run_id` (optional, auto-generated if empty)
-2. `diagram_path` (default: `examples/diagram.puml`)
-
-Artifacts are uploaded as `reconstructed-<run_id>` and include the full `runs/<run_id>/` directory.
-
-## Local smoke run
-
-Prerequisites:
-
-- Java 25 available on `PATH`
-- Maven (`mvn`)
-- Bash
-- `rg` (ripgrep) for gate checks
-
-Example:
+## Single command
 
 ```bash
-RUN_ID="local-smoke"
-RUN_DIR="runs/${RUN_ID}"
-
-mkdir -p "${RUN_DIR}/input" "${RUN_DIR}/new_repo" "${RUN_DIR}/logs" "${RUN_DIR}/outputs"
-cp examples/diagram.puml "${RUN_DIR}/input/diagram.puml"
-
-./scripts/mock_reconstruct.sh \
-  "${RUN_DIR}/input/diagram.puml" \
-  "${RUN_DIR}/new_repo"
-
-cp gate_recon.sh "${RUN_DIR}/new_repo/gate_recon.sh"
-chmod +x "${RUN_DIR}/new_repo/gate_recon.sh"
-
-(cd "${RUN_DIR}/new_repo" && ./gate_recon.sh)
+./andvari-run.sh --diagram /path/to/diagram.puml --run-id optional-id --max-iter 8
 ```
 
-## Notes
+- `--diagram` is required.
+- `--run-id` is optional. If omitted, a UTC timestamp id is generated.
+- `--max-iter` is optional. It controls automatic repair loops after the initial generation.
 
-- The mock generator currently emits a Maven-based Java project with JUnit 5 tests.
-- The gate enforces required docs and no-stub markers (`TODO-STUB:`) before running tests.
+## What the runner does
+
+1. Creates a fresh workspace:
+   - `runs/<run_id>/input`
+   - `runs/<run_id>/new_repo`
+   - `runs/<run_id>/logs`
+   - `runs/<run_id>/outputs`
+2. Copies the input diagram to `runs/<run_id>/input/diagram.puml`.
+3. Copies `AGENTS.md` and `gate_recon.sh` to `runs/<run_id>/new_repo`.
+4. Runs `codex exec` from `runs/<run_id>/new_repo` with reconstruction instructions.
+5. Runs `./gate_recon.sh` locally.
+6. If gate fails, loops:
+   - summarize latest gate failure (`tail -n 200`)
+   - call `codex exec` with fix instructions + summary
+   - rerun gate
+   - stop on pass or after `--max-iter`
+7. Writes artifacts and run report.
+
+The gate enforces:
+- no stub markers
+- exactly one build system (Gradle or Maven)
+- tests passing
+- at least one production `main` entrypoint
+- executable `./run_demo.sh` and successful demo smoke run
+
+## Artifacts
+
+Per run:
+
+- `runs/<run_id>/logs/codex_events.jsonl`
+- `runs/<run_id>/logs/codex_stderr.log`
+- `runs/<run_id>/logs/gate.log`
+- `runs/<run_id>/outputs/run_report.md`
+
+## Prerequisites
+
+- `codex` CLI installed and on `PATH`
+- active Codex auth (`codex login status` must succeed)
+- Bash
+- Java + build tooling required by the generated project
+- `rg` (used by `gate_recon.sh`)
+
+The runner fails fast with actionable errors if Codex CLI is missing, unauthenticated, or cannot write its local session directory.
+
+## Adapter design
+
+The runner uses an adapter entrypoint:
+
+- `scripts/adapters/adapter.sh`
+- `scripts/adapters/codex.sh`
+
+Only the Codex adapter is implemented now, but the orchestration is structured so other model adapters can be added later without rewriting `andvari-run.sh`.

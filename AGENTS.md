@@ -2,12 +2,15 @@
 
 ## Mission
 You are reconstructing a complete, working Java repository from a single PlantUML diagram (`.puml`) that represents an "old repo".
-Your output must be a coherent, runnable project that compiles and passes tests.
+Your output must be a coherent, runnable project that compiles, passes tests, and can be executed through a demo entrypoint.
 
 ### Hard requirements
 - Language: **Java**
-- Build tool: **Gradle OR Maven** (pick one and make it work)
-- Input source of truth: the provided `.puml` diagram
+- Build tool: **Gradle OR Maven** (pick exactly one and make it work)
+  - Do not include both Gradle and Maven build definitions in the generated repo.
+- Input source of truth: the provided `.puml` diagram only.
+  - You are limited to your specific run folder. It is strictly prohibited to read or do anything outside of this folder. 
+  - If behavior is underspecified by the diagram, make a reasonable implementation choice and record it.
 - **No placeholder stubs**: do not create empty methods/classes just to satisfy compilation.
   - If something is unclear, make a reasonable implementation choice and **log it**.
 - Ambiguity handling:
@@ -16,12 +19,18 @@ Your output must be a coherent, runnable project that compiles and passes tests.
 - Tests are mandatory:
   - Include meaningful unit tests for core logic.
   - Include integration tests where the system has boundaries (HTTP, DB, filesystem), using mocks or containers as appropriate.
+- Runnable demo is mandatory:
+  - Include at least one production entrypoint: `public static void main(String[] args)` in `src/main/java`.
+  - Include an executable repo-root script `run_demo.sh` that runs the demo entrypoint.
+  - `run_demo.sh` must be deterministic and runnable on a clean local machine without IDE-specific setup.
+  - `README.md` must clearly document how to run the demo (`./run_demo.sh`).
 
 ## Output artifacts required
 You must create:
 - `README.md` — how to build/test/run
 - `docs/ASSUMPTIONS.md` — all ambiguity + decisions
 - `docs/ARCHITECTURE.md` — short explanation of layers/modules and key flows
+- `run_demo.sh` — executable demo launcher
 
 ## Stop condition (non-negotiable)
 Do not consider the task complete until `./gate_recon.sh` passes.
@@ -35,6 +44,7 @@ Do the work, run the gate, fix failures, repeat. Only write a brief final summar
 - Prefer one of:
   - Gradle wrapper: `./gradlew test`
   - Maven: `mvn -q test`
+- If using Gradle, include an executable `./gradlew`.
 - Keep the project runnable on a clean machine (no IDE-only magic).
 - Pin dependency versions reasonably (use BOMs where appropriate).
 
