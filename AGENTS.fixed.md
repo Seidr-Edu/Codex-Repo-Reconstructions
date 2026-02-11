@@ -10,11 +10,13 @@ Reconstruct a complete, working Java repository from the provided PlantUML diagr
 - No placeholder stubs
 - Provide meaningful tests
 - Provide runnable demo (`main` and executable `run_demo.sh`)
+- Provide comprehensive usage documentation (`docs/USAGE.md`) covering how to build artifacts for deployment, integrate the project, and use it in production scenarios
 
 ## Required artifacts
 - `README.md`
 - `docs/ASSUMPTIONS.md`
 - `docs/ARCHITECTURE.md`
+- `docs/USAGE.md` (how to use built artifacts for actual usage, including build commands, deployment instructions, and integration examples)
 - `run_demo.sh`
 
 ## Working rules
