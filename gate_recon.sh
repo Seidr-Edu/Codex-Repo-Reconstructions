@@ -33,6 +33,7 @@ info "Checking required docs..."
 [[ -f README.md ]] || fail "Missing README.md"
 [[ -f docs/ASSUMPTIONS.md ]] || fail "Missing docs/ASSUMPTIONS.md"
 [[ -f docs/ARCHITECTURE.md ]] || fail "Missing docs/ARCHITECTURE.md"
+[[ -f docs/USAGE.md ]] || fail "Missing docs/USAGE.md"
 [[ -f run_demo.sh ]] || fail "Missing run_demo.sh"
 [[ -x run_demo.sh ]] || fail "run_demo.sh exists but is not executable"
 

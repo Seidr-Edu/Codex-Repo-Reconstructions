@@ -9,6 +9,7 @@ Reconstruct a complete, working Java repository from the provided PlantUML diagr
 - Tests: meaningful unit tests for core logic, plus integration tests when boundaries exist
 - Buildable: project compiles and tests pass
 - Usable: runnable demo entrypoint (`main`) and executable `run_demo.sh`
+- Usage documentation: comprehensive guide in `docs/USAGE.md` covering how to build artifacts for deployment, integrate the project, and use it in production scenarios
 - No placeholder stubs (`TODO-STUB`, `return null`, `UnsupportedOperationException`, `NotImplementedError` in production logic)
 
 ## Source of truth and scope
@@ -20,6 +21,7 @@ Reconstruct a complete, working Java repository from the provided PlantUML diagr
 - `README.md` (build/test/run instructions)
 - `docs/ASSUMPTIONS.md`
 - `docs/ARCHITECTURE.md`
+- `docs/USAGE.md`
 - `run_demo.sh` (executable)
 
 ## Adaptive self-gating protocol

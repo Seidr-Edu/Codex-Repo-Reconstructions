@@ -76,6 +76,15 @@ Per run:
 - `AGENTS.fixed.md`: used when `--gating-mode fixed`
 - `AGENTS.md`: repository-level index that points to the strategy templates
 
+### Required artifacts in generated repositories
+
+All reconstruction modes require the following artifacts:
+- `README.md` (build/test/run instructions)
+- `docs/ASSUMPTIONS.md` (documented assumptions and design decisions)
+- `docs/ARCHITECTURE.md` (architectural overview)
+- `docs/USAGE.md` (comprehensive usage guide including how to build artifacts for deployment, integrate the project, and use it in production scenarios)
+- `run_demo.sh` (executable demo script)
+
 Model-mode generated repo artifacts (inside `new_repo`):
 
 - `completion/outcomes.initial.json`

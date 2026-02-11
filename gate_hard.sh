@@ -33,6 +33,7 @@ info "Checking required docs..."
 [[ -f README.md ]] || fail "Missing README.md"
 [[ -f docs/ASSUMPTIONS.md ]] || fail "Missing docs/ASSUMPTIONS.md"
 [[ -f docs/ARCHITECTURE.md ]] || fail "Missing docs/ARCHITECTURE.md"
+[[ -f docs/USAGE.md ]] || fail "Missing docs/USAGE.md"
 
 info "Checking README demo instructions..."
 rg -n "run_demo\\.sh" README.md >/dev/null 2>&1 || fail "README.md must document how to run ./run_demo.sh"
