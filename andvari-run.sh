@@ -84,6 +84,8 @@ fi
 
 validate_run_id "$RUN_ID" || fail "Invalid --run-id '$RUN_ID' (allowed: letters, numbers, ., _, -)"
 [[ "$MAX_ITER" =~ ^[0-9]+$ ]] || fail "--max-iter must be a non-negative integer"
+# Force decimal interpretation so values like 08 do not trigger bash octal parsing errors.
+MAX_ITER=$((10#$MAX_ITER))
 
 RUNS_DIR="${ROOT_DIR}/runs"
 RUN_DIR="${RUNS_DIR}/${RUN_ID}"
