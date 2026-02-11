@@ -16,7 +16,7 @@ Reconstruct a complete, working Java repository from the provided PlantUML diagr
 - `README.md`
 - `docs/ASSUMPTIONS.md`
 - `docs/ARCHITECTURE.md`
-- `docs/USAGE.md` (how to use built artifacts for actual usage, including build commands, deployment instructions, and integration examples)
+- `docs/USAGE.md`
 - `run_demo.sh`
 
 ## Working rules
