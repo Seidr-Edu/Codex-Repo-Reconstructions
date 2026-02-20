@@ -13,7 +13,10 @@ Reconstruct a complete, working Java repository from the provided PlantUML diagr
 - No placeholder stubs (`TODO-STUB`, `return null`, `UnsupportedOperationException`, `NotImplementedError` in production logic)
 
 ## Source of truth and scope
-- Use only `../input/diagram.puml` as source of behavior/structure.
+- Use `../input/diagram.puml` as source of intended behavior/structure.
+- If `../input/tests` exists, treat it as immutable read-only hard-gate input.
+- Do not modify or relax files under `../input/tests`.
+- If diagram behavior conflicts with provided tests, passing provided tests is required for completion.
 - Operate only inside this run repository.
 - If underspecified, make reasonable choices and document them in `docs/ASSUMPTIONS.md`.
 
@@ -38,6 +41,7 @@ Required shape:
 
 ### 2) Implement and iterate
 - Implement the project from the diagram.
+- If provided hard tests exist, implementation and gate strategy must make those tests pass.
 - You may evolve verification strategy with newer `gates.vN.json` versions.
 - Do not mutate `completion/outcomes.initial.json` after declaration.
 - Keep all initial outcomes covered in the latest gate version.
@@ -51,3 +55,4 @@ Required shape:
 Do not stop until both pass:
 - `./gate_hard.sh`
 - `./scripts/verify_outcome_coverage.sh`
+When `../input/tests` exists, completion requires those provided tests to pass as hard gates.

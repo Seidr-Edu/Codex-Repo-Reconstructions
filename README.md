@@ -8,12 +8,13 @@ Output: isolated reconstructed repository, gate logs, and run report
 ## Single command
 
 ```bash
-./andvari-run.sh --diagram /path/to/diagram.puml --run-id optional-id --max-iter 8
+./andvari-run.sh --diagram /path/to/diagram.puml --tests /path/to/test-pack --run-id optional-id --max-iter 8
 ```
 
 ## Key options
 
 - `--diagram` (required): path to input diagram.
+- `--tests` (optional): path to provided hard-tests pack (`java/` required, `resources/` optional).
 - `--run-id` (optional): explicit run id (defaults to UTC timestamp).
 - `--max-iter` (optional): max repair loops after first implementation attempt.
 - `--gating-mode model|fixed` (optional):
@@ -21,6 +22,14 @@ Output: isolated reconstructed repository, gate logs, and run report
   - `fixed`: legacy `gate_recon.sh` flow.
 - `--max-gate-revisions` (optional, model mode): max revisions after `gates.v1` (default `3`).
 - `--model-gate-timeout-sec` (optional, model mode): timeout for replaying `completion/run_all_gates.sh` (default `120`).
+
+### Provided tests pack format
+
+If `--tests` is set, the directory must include:
+- `java/` (required): Java test/support source files (`.java`)
+- `resources/` (optional): test resource files copied to `src/test/resources`
+
+These provided tests are enforced as immutable hard gates in both gating modes.
 
 ## Model mode flow (default)
 
@@ -30,6 +39,7 @@ Output: isolated reconstructed repository, gate logs, and run report
    - `runs/<run_id>/logs`
    - `runs/<run_id>/outputs`
 2. Copies diagram to `runs/<run_id>/input/diagram.puml`.
+   - If `--tests` is provided, copies test pack to `runs/<run_id>/input/tests`.
 3. Copies runner policy/scripts into `new_repo`:
    - strategy-selected AGENTS template as `new_repo/AGENTS.md`
    - `gate_hard.sh`
@@ -44,6 +54,7 @@ Output: isolated reconstructed repository, gate logs, and run report
 7. Runner evaluates acceptance:
    - `./gate_hard.sh`
    - `./scripts/verify_outcome_coverage.sh --max-gate-revisions <N> --model-gate-timeout-sec <S>`
+   - when `../input/tests` exists, gate scripts sync those tests into `src/test` before test checks/execution
 8. If acceptance fails, runner loops repair iterations up to `--max-iter`.
 
 `verify_outcome_coverage.sh` enforces:
@@ -58,7 +69,7 @@ Output: isolated reconstructed repository, gate logs, and run report
 
 `--gating-mode fixed` preserves current behavior:
 - initial reconstruction prompt
-- run `./gate_recon.sh`
+- run `./gate_recon.sh` (includes provided tests as hard gates when `../input/tests` exists)
 - summarize failures and iterate repairs up to `--max-iter`
 
 ## Artifacts

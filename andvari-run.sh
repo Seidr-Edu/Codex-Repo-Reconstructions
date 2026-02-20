@@ -7,10 +7,11 @@ ADAPTER_LIB="${ROOT_DIR}/scripts/adapters/adapter.sh"
 usage() {
   cat <<'USAGE'
 Usage:
-  ./andvari-run.sh --diagram /path/to/diagram.puml [--run-id RUN_ID] [--max-iter N] [--gating-mode model|fixed] [--max-gate-revisions N] [--model-gate-timeout-sec N]
+  ./andvari-run.sh --diagram /path/to/diagram.puml [--tests /path/to/test-pack] [--run-id RUN_ID] [--max-iter N] [--gating-mode model|fixed] [--max-gate-revisions N] [--model-gate-timeout-sec N]
 
 Options:
   --diagram                 Path to the PlantUML diagram (.puml). Required.
+  --tests                   Optional path to external hard tests pack (must contain java/ with .java files; resources/ optional).
   --run-id                  Optional run id. Auto-generated (UTC timestamp) if omitted.
   --max-iter                Maximum repair iterations after first implementation attempt. Default: 8.
   --gating-mode             Gating strategy: model (default) or fixed.
@@ -39,6 +40,23 @@ require_file() {
   [[ -f "$path" ]] || fail "File not found: $path"
 }
 
+require_dir() {
+  local path="$1"
+  [[ -d "$path" ]] || fail "Directory not found: $path"
+}
+
+validate_tests_pack() {
+  local tests_path="$1"
+  local java_dir="${tests_path}/java"
+  local java_file_count
+
+  require_dir "$tests_path"
+  require_dir "$java_dir"
+
+  java_file_count="$(find "$java_dir" -type f -name "*.java" 2>/dev/null | wc -l | tr -d ' ')"
+  [[ "$java_file_count" -ge 1 ]] || fail "Provided tests pack must contain at least one .java file under: $java_dir"
+}
+
 compute_sha256() {
   local path="$1"
   if command -v sha256sum >/dev/null 2>&1; then
@@ -62,6 +80,7 @@ fi
 source "$ADAPTER_LIB"
 
 DIAGRAM_PATH=""
+TESTS_PATH=""
 RUN_ID=""
 MAX_ITER="8"
 GATING_MODE="${ANDVARI_GATING_MODE:-model}"
@@ -75,6 +94,12 @@ while [[ $# -gt 0 ]]; do
     --diagram)
       [[ $# -ge 2 ]] || fail "--diagram requires a value"
       DIAGRAM_PATH="$2"
+      shift 2
+      ;;
+    --tests)
+      [[ $# -ge 2 ]] || fail "--tests requires a value"
+      [[ -z "$TESTS_PATH" ]] || fail "--tests may only be provided once"
+      TESTS_PATH="$2"
       shift 2
       ;;
     --run-id)
@@ -114,6 +139,9 @@ done
 
 [[ -n "$DIAGRAM_PATH" ]] || fail "--diagram is required"
 require_file "$DIAGRAM_PATH"
+if [[ -n "$TESTS_PATH" ]]; then
+  validate_tests_pack "$TESTS_PATH"
+fi
 
 if [[ -z "$RUN_ID" ]]; then
   RUN_ID="$(date -u +"%Y%m%dT%H%M%SZ")"
@@ -147,6 +175,7 @@ INPUT_DIR="${RUN_DIR}/input"
 NEW_REPO_DIR="${RUN_DIR}/new_repo"
 LOGS_DIR="${RUN_DIR}/logs"
 OUTPUTS_DIR="${RUN_DIR}/outputs"
+PROVIDED_TESTS_REPORT="none"
 
 if [[ -e "$RUN_DIR" ]]; then
   fail "Run directory already exists: $RUN_DIR. Use a different --run-id."
@@ -162,6 +191,11 @@ adapter_check_prereqs "$ADAPTER"
 
 mkdir -p "$INPUT_DIR" "$NEW_REPO_DIR" "$LOGS_DIR" "$OUTPUTS_DIR" "${NEW_REPO_DIR}/scripts"
 cp "$DIAGRAM_PATH" "${INPUT_DIR}/diagram.puml"
+if [[ -n "$TESTS_PATH" ]]; then
+  mkdir -p "${INPUT_DIR}/tests"
+  cp -R "${TESTS_PATH}/." "${INPUT_DIR}/tests/"
+  PROVIDED_TESTS_REPORT="runs/${RUN_ID}/input/tests"
+fi
 cp "$AGENTS_TEMPLATE_PATH" "${NEW_REPO_DIR}/AGENTS.md"
 cp "${ROOT_DIR}/gate_recon.sh" "${NEW_REPO_DIR}/gate_recon.sh"
 cp "${ROOT_DIR}/gate_hard.sh" "${NEW_REPO_DIR}/gate_hard.sh"
@@ -311,6 +345,7 @@ echo "[andvari] run dir: ${RUN_DIR}"
 echo "[andvari] adapter: ${ADAPTER}"
 echo "[andvari] gating mode: ${GATING_MODE}"
 echo "[andvari] agents template: ${AGENTS_TEMPLATE_PATH}"
+echo "[andvari] provided tests: ${PROVIDED_TESTS_REPORT}"
 
 if [[ "$GATING_MODE" == "fixed" ]]; then
   echo "[andvari] starting fixed-gate reconstruction..."
@@ -428,6 +463,7 @@ cat > "$RUN_REPORT" <<REPORT_EOF
 - Run ID: \`${RUN_ID}\`
 - Adapter: \`${ADAPTER}\`
 - Diagram: \`runs/${RUN_ID}/input/diagram.puml\`
+- Provided Tests: \`${PROVIDED_TESTS_REPORT}\`
 - Gating Mode: \`${GATING_MODE}\`
 - AGENTS Template: \`${AGENTS_TEMPLATE_PATH##*/}\`
 - Status: \`${STATUS}\`

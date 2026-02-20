@@ -6,7 +6,10 @@ Reconstruct a complete, working Java repository from the provided PlantUML diagr
 ## Hard requirements
 - Language: **Java**
 - Build system: choose exactly one (**Gradle** or **Maven**)
-- Use only `../input/diagram.puml` as source of truth
+- Use `../input/diagram.puml` as the design source of truth
+- If `../input/tests` exists, treat it as immutable read-only hard-gate input
+- Do not modify or relax files under `../input/tests`
+- If diagram behavior conflicts with provided tests, passing provided tests is required for completion
 - No placeholder stubs
 - Provide meaningful tests
 - Provide runnable demo (`main` and executable `run_demo.sh`)
@@ -21,9 +24,11 @@ Reconstruct a complete, working Java repository from the provided PlantUML diagr
 
 ## Working rules
 - Operate only inside this run repository.
+- Use `../input/diagram.puml` and optional `../input/tests` as read-only inputs.
 - Resolve ambiguity with reasonable assumptions and record them in `docs/ASSUMPTIONS.md`.
 - Keep implementation deterministic where practical.
 
 ## Stop condition
 Do not consider the task complete until `./gate_recon.sh` passes.
 If it fails, fix and rerun until green.
+When `../input/tests` exists, passing `./gate_recon.sh` includes those provided tests as mandatory hard gates.

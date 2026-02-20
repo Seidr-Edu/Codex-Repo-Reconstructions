@@ -94,20 +94,26 @@ codex_run_initial_reconstruction() {
 Reconstruct this Java repository from the source-of-truth diagram at:
 ../input/diagram.puml
 
+Optional hard tests input (if present):
+../input/tests
+
 Policy:
 - Follow AGENTS.md in this repository as the authoritative requirements document.
 - If any instruction in this prompt appears to conflict with AGENTS.md, AGENTS.md wins.
+- If ../input/tests exists, treat it as immutable read-only input and as a hard completion oracle.
+- If diagram behavior conflicts with provided tests, provided tests take precedence for completion.
 
 Execution:
-1. Read ../input/diagram.puml.
+1. Read ../input/diagram.puml and inspect ../input/tests if present.
 2. Reconstruct the repo accordingly.
 3. Run ./gate_recon.sh.
 4. If gate fails, fix and rerun until it passes.
 
 Scope constraints:
 - Operate only inside this run repository.
-- Use ../input/diagram.puml as read-only input.
+- Use ../input/diagram.puml and optional ../input/tests as read-only input.
 - Do not inspect or modify any other run directories.
+- Do not modify or relax files under ../input/tests.
 
 Return a concise summary including final gate result.
 PROMPT_EOF
@@ -148,13 +154,18 @@ Gate failed. Fix the repository and get gate_recon.sh to pass.
 Source diagram:
 ../input/diagram.puml
 
+Optional hard tests input (if present):
+../input/tests
+
 Policy:
 - Follow AGENTS.md in this repository as the authoritative requirements document.
 - If any instruction in this prompt appears to conflict with AGENTS.md, AGENTS.md wins.
+- If ../input/tests exists, treat it as immutable read-only input and as a hard completion oracle.
+- If diagram behavior conflicts with provided tests, provided tests take precedence for completion.
 
 Actions:
 1. Read the gate failure summary below.
-2. Apply fixes in this repository.
+2. Apply fixes in this repository to satisfy diagram requirements and provided hard tests (if present).
 3. Run ./gate_recon.sh.
 4. If gate still fails, continue fixing and rerunning until it passes.
 5. Return concise summary of root cause and fixes.
@@ -201,12 +212,18 @@ You are in phase 1 (gate declaration only) for adaptive self-gating.
 Source diagram:
 ../input/diagram.puml
 
+Optional hard tests input (if present):
+../input/tests
+
 Policy:
 - Follow AGENTS.md in this repository as the authoritative requirements document.
 - If any instruction in this prompt appears to conflict with AGENTS.md, AGENTS.md wins.
+- If ../input/tests exists, treat it as immutable read-only input and as a hard completion oracle.
+- If diagram behavior conflicts with provided tests, provided tests take precedence for completion.
 
 Goal for this phase:
 - Define diagram-derived completion outcomes and initial verification gates before implementation.
+- When provided hard tests exist, ensure outcomes/gates require those tests to pass for completion.
 - Do not implement production/test source code in this phase.
 
 Create these files:
@@ -231,8 +248,9 @@ Rules:
 - Allowed gate versions are v1 through v${max_gate_version}.
 - Every outcome id in outcomes.initial.json must appear in at least one gate outcome_ids entry in gates.v1.json.
 - Operate only inside this run repository.
-- Use ../input/diagram.puml as read-only input.
+- Use ../input/diagram.puml and optional ../input/tests as read-only input.
 - Do not inspect or modify any other run directories.
+- Do not modify or relax files under ../input/tests.
 
 Return a concise summary of the declared outcomes and gates.
 PROMPT_EOF
@@ -276,19 +294,25 @@ Adaptive self-gating implementation phase.
 Source diagram:
 ../input/diagram.puml
 
+Optional hard tests input (if present):
+../input/tests
+
 Policy:
 - Follow AGENTS.md in this repository as the authoritative requirements document.
 - If any instruction in this prompt appears to conflict with AGENTS.md, AGENTS.md wins.
+- If ../input/tests exists, treat it as immutable read-only input and as a hard completion oracle.
+- If diagram behavior conflicts with provided tests, provided tests take precedence for completion.
 
 Mode details:
 - completion/outcomes.initial.json is immutable after declaration.
 - You may evolve verification strategy by adding/replacing completion/gates.vN.json.
 - Allowed gate versions are v1 through v${max_gate_version}.
 - The latest gate version must still map every initial outcome id to at least one gate.
+- If provided hard tests exist, the latest gate version must enforce them as hard completion gates.
 
 Execution loop (continue until green):
 1. Read the failure summary below.
-2. Implement/fix the repository from the diagram.
+2. Implement/fix the repository from the diagram while satisfying provided hard tests (if present).
 3. Update completion/run_all_gates.sh and completion/proof/results.vN.json behavior as needed.
 4. Run ./gate_hard.sh.
 5. Run ./scripts/verify_outcome_coverage.sh --max-gate-revisions ${max_gate_revisions} --model-gate-timeout-sec ${model_gate_timeout_sec}
@@ -296,8 +320,9 @@ Execution loop (continue until green):
 
 Scope constraints:
 - Operate only inside this run repository.
-- Use ../input/diagram.puml as read-only input.
+- Use ../input/diagram.puml and optional ../input/tests as read-only input.
 - Do not inspect or modify any other run directories.
+- Do not modify or relax files under ../input/tests.
 
 Failure summary:
 PROMPT_EOF

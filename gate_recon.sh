@@ -17,6 +17,33 @@ info() {
   echo "[gate] $1"
 }
 
+sync_provided_tests_if_present() {
+  local provided_tests_dir="../input/tests"
+  local provided_java_dir="${provided_tests_dir}/java"
+  local provided_resources_dir="${provided_tests_dir}/resources"
+  local java_file_count
+
+  if [[ ! -d "$provided_tests_dir" ]]; then
+    return 0
+  fi
+
+  info "Syncing provided hard tests from ${provided_tests_dir}"
+  [[ -d "$provided_java_dir" ]] || fail "Provided tests pack is invalid: missing ${provided_java_dir}"
+
+  java_file_count="$(find "$provided_java_dir" -type f -name "*.java" 2>/dev/null | wc -l | tr -d ' ')"
+  [[ "$java_file_count" -ge 1 ]] || fail "Provided tests pack is invalid: no .java files under ${provided_java_dir}"
+
+  mkdir -p src/test/java
+  cp -R "${provided_java_dir}/." src/test/java/
+
+  if [[ -d "$provided_resources_dir" ]]; then
+    mkdir -p src/test/resources
+    cp -R "${provided_resources_dir}/." src/test/resources/
+  fi
+
+  info "Provided hard tests synced (${java_file_count} Java file(s))."
+}
+
 run_demo_with_optional_timeout() {
   local log_file="$1"
   if command -v timeout >/dev/null 2>&1; then
@@ -112,17 +139,7 @@ if [[ "$HAS_MAVEN_FILES" == "true" ]]; then
   USE_MAVEN="true"
 fi
 
-# --- Run tests ---
-if [[ "$USE_GRADLE" == "true" ]]; then
-  info "Running: ./gradlew test"
-  ./gradlew test
-fi
-
-if [[ "$USE_MAVEN" == "true" ]]; then
-  command -v mvn >/dev/null 2>&1 || fail "Maven build detected but 'mvn' not found."
-  info "Running: mvn -q test"
-  mvn -q test
-fi
+sync_provided_tests_if_present
 
 # --- Minimal test presence sanity check ---
 info "Checking tests exist..."
@@ -142,6 +159,20 @@ fi
 [[ "$TEST_FILES_COUNT" -ge 1 ]] || fail "No test files found (expected at least one *Test.java under src/test)."
 
 info "Found $TEST_FILES_COUNT test file(s)."
+
+sync_provided_tests_if_present
+
+# --- Run tests ---
+if [[ "$USE_GRADLE" == "true" ]]; then
+  info "Running: ./gradlew test"
+  ./gradlew test
+fi
+
+if [[ "$USE_MAVEN" == "true" ]]; then
+  command -v mvn >/dev/null 2>&1 || fail "Maven build detected but 'mvn' not found."
+  info "Running: mvn -q test"
+  mvn -q test
+fi
 
 # --- Demo execution ---
 info "Running demo smoke command: ./run_demo.sh"
